@@ -6,7 +6,7 @@ import type {
   MapMouseEvent,
 } from 'maplibre-gl'
 import type { MapJourneyOption } from '../../app/contracts/map'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import type { TransitIndex } from '../../domain/transit'
 import { createJourneyDurationMarkers, type JourneyDurationMarkers } from './path-duration-markers'
 import {

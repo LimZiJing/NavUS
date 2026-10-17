@@ -1,7 +1,7 @@
 import { Marker, type Map } from 'maplibre-gl'
 import type { MapJourneyOption } from '../../app/contracts/map'
 import { formatDuration } from '../../domain/trip/duration-format'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 
 const JOURNEY_DURATION_MARKER_Z_INDEX = 4
 const JOURNEY_DURATION_MARKER_SPACING = 32

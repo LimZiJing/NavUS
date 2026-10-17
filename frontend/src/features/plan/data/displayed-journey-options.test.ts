@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Path } from '../../../pathfinding/path'
-import type { ScoredPathCandidate } from '../../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
+import type { ScoredPathCandidate } from '@navus/shared/routing/path'
 import { selectDisplayedJourneyOptions } from './displayed-journey-options'
 
 const origin = { kind: 'stop', id: 'STOP-A' } as const

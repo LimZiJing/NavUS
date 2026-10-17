@@ -103,7 +103,7 @@ function createCaseDefinitions(fixtures, modules, manifest) {
 
 async function loadBenchmarkModules(vite) {
   const [valhalla, outcomeValidator, manifest, fixturesModule, report, instrumentation, identity] = await Promise.all([
-    vite.ssrLoadModule('/src/pathfinding/walking/valhalla-walking-client.ts'),
+    vite.ssrLoadModule(toViteFsModuleId(resolve(dirname(fileURLToPath(import.meta.url)), '../../backend/src/pathfinding/walking/valhalla-walking-client.ts'))),
     vite.ssrLoadModule('/scripts/benchmark/outcome.ts'),
     vite.ssrLoadModule('/scripts/benchmark/manifest.ts'),
     vite.ssrLoadModule('/scripts/benchmark/fixtures.ts'),
@@ -449,6 +449,7 @@ function printReport(report) {
 async function main() {
   const options = parseArguments(process.argv.slice(2))
   const adapterRoots = await Promise.all(options.adapterPaths.map(findProjectRoot))
+  const backendRoot = resolve(process.cwd(), '../backend')
   const vite = await createServer({
     appType: 'custom',
     configFile: false,
@@ -456,7 +457,7 @@ async function main() {
     optimizeDeps: { noDiscovery: true, include: [] },
     root: process.cwd(),
     server: {
-      fs: { allow: [...new Set([process.cwd(), ...adapterRoots])] },
+      fs: { allow: [...new Set([process.cwd(), backendRoot, ...adapterRoots])] },
       hmr: false,
       middlewareMode: true,
       ws: false,

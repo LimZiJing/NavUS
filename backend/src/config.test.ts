@@ -23,6 +23,8 @@ describe('loadBackendConfig', () => {
 
     assert.equal(config.host, '127.0.0.1')
     assert.equal(config.port, 3001)
+    assert.equal(config.valhallaBaseUrl, 'http://127.0.0.1:8002')
+    assert.equal(config.journeyRequestTimeoutMs, 10_000)
     assert.equal(config.dataVersion, 'development')
     assert.deepEqual(config.corsOrigins, [
       'http://localhost:5173',
@@ -48,7 +50,22 @@ describe('loadBackendConfig', () => {
     ])
   })
 
-  it('rejects invalid ports, origins, exposed production hosts, and missing revisions', () => {
+  it('accepts loopback and private-IP Valhalla URLs', () => {
+    const loopback = loadBackendConfig({ VALHALLA_BASE_URL: 'http://127.0.0.1:8002/' })
+    const privateNetwork = loadBackendConfig({ VALHALLA_BASE_URL: 'http://10.0.0.12:8002/' })
+    const privateDns = loadBackendConfig({ VALHALLA_BASE_URL: 'http://valhalla:8002/' })
+    const localDns = loadBackendConfig({ VALHALLA_BASE_URL: 'http://routing.local:8002/' })
+    assert.equal(loopback.valhallaBaseUrl, 'http://127.0.0.1:8002')
+    assert.equal(privateNetwork.valhallaBaseUrl, 'http://10.0.0.12:8002')
+    assert.equal(privateDns.valhallaBaseUrl, 'http://valhalla:8002')
+    assert.equal(localDns.valhallaBaseUrl, 'http://routing.local:8002')
+  })
+
+  it('rejects invalid provider URLs and other invalid backend settings', () => {
+    assert.throws(() => loadBackendConfig({ VALHALLA_BASE_URL: 'ftp://routing.local' }), /VALHALLA_BASE_URL/)
+    assert.throws(() => loadBackendConfig({ VALHALLA_BASE_URL: 'https://routing.example.com' }), /private-network address/)
+    assert.throws(() => loadBackendConfig({ VALHALLA_BASE_URL: 'http://169.254.169.254' }), /private-network address/)
+    assert.throws(() => loadBackendConfig({ JOURNEY_REQUEST_TIMEOUT_MS: '99' }), /JOURNEY_REQUEST_TIMEOUT_MS/)
     assert.throws(() => loadBackendConfig({ PORT: '70000' }), /PORT/)
     assert.throws(() => loadBackendConfig({ API_CORS_ORIGINS: 'https://example.com/path' }), /origin/)
     assert.throws(() => loadBackendConfig({

@@ -6,7 +6,7 @@ import {
   getPlanSheetSummary,
   getStopsSheetSummary,
 } from './mobile-sheet-summary'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 
 const stop = { longName: 'Kent Ridge MRT' }
 

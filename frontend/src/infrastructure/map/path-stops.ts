@@ -1,5 +1,5 @@
 import type { BusRoute } from '@navus/shared/transit/types'
-import type { BusPathLeg } from '../../pathfinding/path'
+import type { BusPathLeg } from '@navus/shared/routing/path'
 
 export function getBusPathLegStopIds(
   leg: Pick<BusPathLeg, 'routeId' | 'boardingStopId' | 'alightingStopId'>,

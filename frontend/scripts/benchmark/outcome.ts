@@ -2,8 +2,8 @@ import type { LoadedTransitData } from '../../src/app/contracts/data.js'
 import type {
   WalkingMatrixConnection,
   WalkingMatrixRequest,
-} from '../../src/pathfinding/walking/walking-contracts.js'
-import type { Path, PathGeometry } from '../../src/pathfinding/path.js'
+} from '../../../backend/src/pathfinding/walking/walking-contracts.js'
+import type { Path, PathGeometry } from '../../../backend/src/pathfinding/path.js'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import type { TripEndpoint } from '../../src/domain/trip/types.js'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'

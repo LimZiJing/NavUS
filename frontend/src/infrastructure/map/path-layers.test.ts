@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Map } from 'maplibre-gl'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import { createTransitIndex } from '../../domain/transit'
 import {
   createTransferTransitNetwork,

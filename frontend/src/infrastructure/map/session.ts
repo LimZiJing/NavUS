@@ -8,7 +8,7 @@ import type {
   MapViewportInsets,
 } from '../../app/contracts/map'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@navus/shared/venue/types'

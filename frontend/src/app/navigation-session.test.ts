@@ -3,9 +3,9 @@ import { createValidTransitNetwork } from '../domain/transit/test-fixtures'
 import { createTransitIndex } from '../domain/transit'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
-import type { Path } from '../pathfinding/path'
-import type { ScoredPathCandidate } from '../pathfinding/path'
-import type { FindPathsResult } from '../pathfinding/find-paths'
+import type { Path } from '@navus/shared/routing/path'
+import type { ScoredPathCandidate } from '@navus/shared/routing/path'
+import type { ApiJourneyPlanningResponse } from '@navus/shared/routing/path'
 import type { VenueSearchResult } from '../domain/venue/search'
 import { validateVenueLocationMap } from '@navus/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
@@ -230,25 +230,11 @@ function scoreCandidate(candidateKey: string, path: Path): ScoredPathCandidate {
 function createPlanningResult(
   path: Path,
   candidates: readonly ScoredPathCandidate[] = [scoreCandidate('test-candidate', path)],
-): FindPathsResult {
+): ApiJourneyPlanningResponse {
   return {
+    outcome: 'paths',
     candidates,
     searchStatus: 'complete',
-    metrics: {
-      expandedPathCount: 1,
-      indexBuildDurationMs: 0,
-      candidateResolutionDurationMs: 0,
-      candidateEnumerationStepCount: 1,
-      searchDurationMs: 0,
-      searchYieldWaitMs: 0,
-      searchCpuMs: 0,
-      maxSearchChunkDurationMs: 0,
-      geometrySliceCount: 0,
-      geometrySliceDurationMs: 0,
-      geometryCandidateChecks: 1,
-      geometryRouteRequests: 1,
-      geometryRouteCacheHits: 0,
-    },
   }
 }
 
@@ -370,7 +356,7 @@ describe('navigation session', () => {
   ])('sets a popup destination and preserves the $name', async ({ origin }) => {
     const onMapStopDestinationSet = vi.fn()
     const onMapStopInteraction = vi.fn()
-    const pathfinder = vi.fn(async () => null)
+    const pathfinder = vi.fn(async () => ({ outcome: 'no-path' as const }))
     const dependencies = createDependencies({
       onMapStopDestinationSet,
       onMapStopInteraction,
@@ -396,7 +382,7 @@ describe('navigation session', () => {
   })
 
   it('does not plan when endpoints are selected until the user submits the trip', async () => {
-    const planning = createDeferred<FindPathsResult | null>()
+    const planning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn(() => planning.promise)
     const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
@@ -443,7 +429,7 @@ describe('navigation session', () => {
   })
 
   it('does not duplicate an in-flight Journey when submitted again', async () => {
-    const firstPlanning = createDeferred<FindPathsResult | null>()
+    const firstPlanning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn(() => firstPlanning.promise)
     const session = createNavigationSession(createDependencies({ pathfinder }))
     await session.start(new AbortController().signal)
@@ -509,7 +495,7 @@ describe('navigation session', () => {
       scoreCandidate('bus-option', busJourney),
       scoreCandidate('walking-option', walkingPath),
     ])
-    const nextPlanning = createDeferred<FindPathsResult | null>()
+    const nextPlanning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn()
       .mockResolvedValueOnce(result)
       .mockImplementationOnce(() => nextPlanning.promise)
@@ -539,8 +525,8 @@ describe('navigation session', () => {
   })
 
   it('cancels an in-flight Journey and replans when test time changes', async () => {
-    const firstPlanning = createDeferred<FindPathsResult | null>()
-    const secondPlanning = createDeferred<FindPathsResult | null>()
+    const firstPlanning = createDeferred<ApiJourneyPlanningResponse>()
+    const secondPlanning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)
@@ -557,13 +543,13 @@ describe('navigation session', () => {
     const updated = createPath({ kind: 'stop', id: 'STOP-A' })
     secondPlanning.resolve(createPlanningResult(updated))
     await waitForState(session, (state) => state.path.status === 'ready')
-    firstPlanning.resolve(null)
+    firstPlanning.resolve({ outcome: 'no-path' })
     await Promise.resolve()
     expect(session.getState().path.path).toEqual(updated)
   })
 
   it('cancels an in-flight Journey and clears it when an endpoint changes', async () => {
-    const planning = createDeferred<FindPathsResult | null>()
+    const planning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn(() => planning.promise)
     const dependencies = createDependencies({ pathfinder })
     const session = createNavigationSession(dependencies)
@@ -613,8 +599,8 @@ describe('navigation session', () => {
   })
 
   it('requires a new submission after an endpoint is changed', async () => {
-    const firstPlanning = createDeferred<FindPathsResult | null>()
-    const secondPlanning = createDeferred<FindPathsResult | null>()
+    const firstPlanning = createDeferred<ApiJourneyPlanningResponse>()
+    const secondPlanning = createDeferred<ApiJourneyPlanningResponse>()
     const pathfinder = vi.fn()
       .mockImplementationOnce(() => firstPlanning.promise)
       .mockImplementationOnce(() => secondPlanning.promise)

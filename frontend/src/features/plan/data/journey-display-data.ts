@@ -1,5 +1,5 @@
 import type { TransitIndex } from '../../../domain/transit'
-import type { Path, PathLeg, BusPathLeg } from '../../../pathfinding/path'
+import type { Path, PathLeg, BusPathLeg } from '@navus/shared/routing/path'
 import { formatDuration } from '../../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../../domain/location/search'

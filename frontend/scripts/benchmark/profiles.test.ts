@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLiveBusWaitingTimeProvider } from '../../src/pathfinding/pipeline/apply-bus-waits'
+import { createLiveBusWaitingTimeProvider } from '../../../backend/src/pathfinding/pipeline/apply-bus-waits'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours'
 import type { ShuttleTimingRecord } from '@navus/shared/transit/timing'
 import { loadPathfindingBenchmarkManifest } from './manifest'

@@ -8,15 +8,11 @@ const adapters = vi.hoisted(() => ({
   createShuttleArrivalClient: vi.fn(),
   createPublicBusArrivalClient: vi.fn(),
   createShuttleServiceHoursClient: vi.fn(),
-  createRouteEngine: vi.fn(),
-  createWalkingConnectionProvider: vi.fn(),
-  createFindPathsService: vi.fn(),
+  createJourneyPlanningClient: vi.fn(),
   locationTracker: {},
   shuttleArrivalClient: {},
   publicBusArrivalClient: {},
   shuttleServiceHoursClient: {},
-  routeEngine: {},
-  walkingConnectionProvider: {},
   pathfinder: vi.fn(),
 }))
 
@@ -36,14 +32,8 @@ vi.mock('../../infrastructure/lta-datamall/client', () => ({
 vi.mock('../../infrastructure/shuttle-service-hours/client', () => ({
   createShuttleServiceHoursClient: adapters.createShuttleServiceHoursClient,
 }))
-vi.mock('../../pathfinding/walking/valhalla-walking-client', () => ({
-  createValhallaRouteEngine: adapters.createRouteEngine,
-}))
-vi.mock('../../pathfinding/walking/walking-connections', () => ({
-  createWalkingConnectionProvider: adapters.createWalkingConnectionProvider,
-}))
-vi.mock('../../pathfinding/find-paths', () => ({
-  createFindPathsService: adapters.createFindPathsService,
+vi.mock('../../infrastructure/pathfinding/client', () => ({
+  createJourneyPlanningClient: adapters.createJourneyPlanningClient,
 }))
 
 describe('createAppServices', () => {
@@ -53,36 +43,30 @@ describe('createAppServices', () => {
     adapters.createShuttleArrivalClient.mockReturnValue(adapters.shuttleArrivalClient)
     adapters.createPublicBusArrivalClient.mockReturnValue(adapters.publicBusArrivalClient)
     adapters.createShuttleServiceHoursClient.mockReturnValue(adapters.shuttleServiceHoursClient)
-    adapters.createRouteEngine.mockReturnValue(adapters.routeEngine)
-    adapters.createWalkingConnectionProvider.mockReturnValue(adapters.walkingConnectionProvider)
-    adapters.createFindPathsService.mockReturnValue(adapters.pathfinder)
+    adapters.createJourneyPlanningClient.mockReturnValue(adapters.pathfinder)
   })
 
-  it('shares the Stops timing clients with Journey planning and preserves configured routing', () => {
+  it('creates the server-backed planner and passes the development clock only in development', () => {
     const journeyTestClock = { get: vi.fn(() => 1_800_000_000_000) }
 
-    const services = createAppServices({
-      journeyTestClock,
-      valhallaBaseUrl: 'https://routing.example.test/valhalla',
-      isDevelopment: false,
-    })
+    const services = createAppServices({ journeyTestClock, isDevelopment: true })
 
-    expect(adapters.createShuttleArrivalClient).toHaveBeenCalledOnce()
-    expect(adapters.createShuttleServiceHoursClient).toHaveBeenCalledOnce()
     expect(services.shuttleArrivalClient).toBe(adapters.shuttleArrivalClient)
     expect(services.shuttleServiceHoursClient).toBe(adapters.shuttleServiceHoursClient)
-    expect(adapters.createRouteEngine).toHaveBeenCalledWith({
-      baseUrl: 'https://routing.example.test/valhalla',
+    expect(adapters.createJourneyPlanningClient).toHaveBeenCalledOnce()
+    const options = adapters.createJourneyPlanningClient.mock.calls[0][0]
+    expect(options.getSimulatedDepartureMs).toBe(journeyTestClock.get)
+    expect(services.pathfinder).toBe(adapters.pathfinder)
+  })
+
+  it('does not send a simulated departure clock in production', () => {
+    const services = createAppServices({
+      journeyTestClock: { get: () => 1_800_000_000_000 },
+      isDevelopment: false,
     })
-    expect(adapters.createWalkingConnectionProvider).toHaveBeenCalledWith({
-      routeEngine: adapters.routeEngine,
-    })
-    expect(adapters.createFindPathsService).toHaveBeenCalledWith(expect.objectContaining({
-      routeEngine: adapters.routeEngine,
-      walkingConnectionProvider: adapters.walkingConnectionProvider,
-      getTestDepartureMs: journeyTestClock.get,
-      now: Date.now,
-    }))
+    const options = adapters.createJourneyPlanningClient.mock.calls[0][0]
+
+    expect(options.getSimulatedDepartureMs()).toBeNull()
     expect(services.pathfinder).toBe(adapters.pathfinder)
   })
 

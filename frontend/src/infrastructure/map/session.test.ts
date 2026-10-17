@@ -7,7 +7,7 @@ import {
 import { createTransitIndex } from '../../domain/transit'
 import { generateShuttleTimingData } from '@navus/shared/transit/timing'
 import type { BusRouteGeometry } from '@navus/shared/transit/types'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import type { VenueLocation } from '@navus/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 

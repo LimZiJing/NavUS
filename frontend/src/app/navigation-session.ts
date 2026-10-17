@@ -13,6 +13,7 @@ import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
+import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import {
   createInitialResourceStatus,
   deriveResourceStatus,
@@ -33,11 +34,6 @@ import {
   type LocationTrackingState,
 } from '../domain/location/types'
 import { isValidLocationCoordinates } from '../domain/location/coordinates'
-import {
-  NoPathAvailableError,
-  type FindPathsService,
-  type FindPathsRequest,
-} from '../pathfinding/find-paths'
 import {
   createInitialJourneyState,
   createJourneyStateWithStatus,
@@ -92,7 +88,7 @@ export interface NavigationSessionDependencies {
   readonly map: MapSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
-  readonly pathfinder?: FindPathsService
+  readonly pathfinder?: JourneyPlanningClient
   readonly locationTracker: LocationTracker
   readonly onMapStopInteraction?: (stopId: string) => void
   readonly onMapStopDestinationSet?: (stopId: string) => void
@@ -354,16 +350,9 @@ export function createNavigationSession(
     const requestId = journeyPlanningRequestId
     const controller = new AbortController()
     journeyPlanningAbortController = controller
-    const request: FindPathsRequest = {
+    const request = {
       origin: state.tripRequest.origin,
       destination: state.tripRequest.destination,
-      venues: state.venues,
-      buildings: state.buildings,
-      transit: {
-        index: transitData.index,
-        geometry: transitData.geometry,
-        shuttleTiming: transitData.shuttleTiming,
-      },
     }
     dependencies.map.setJourneyOptions([], null)
     updateState({
@@ -373,9 +362,8 @@ export function createNavigationSession(
     void pathfinder(request, { signal: controller.signal }).then(
       (planningResult) => {
         if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
-        const displayedCandidates = planningResult === null
-          ? []
-          : selectDisplayedJourneyOptions(planningResult.candidates)
+        const candidates = planningResult.outcome === 'paths' ? planningResult.candidates : []
+        const displayedCandidates = selectDisplayedJourneyOptions(candidates)
         const recommended = displayedCandidates[0] ?? null
         enqueueTransition(() => {
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
@@ -390,16 +378,19 @@ export function createNavigationSession(
             recommended !== null,
           )
           updateState({
-            path: recommended && planningResult
+            path: recommended
               ? {
                   status: 'ready',
                   path: recommended.path,
-                  candidates: planningResult.candidates,
+                  candidates,
                   displayedCandidates,
                   selectedCandidateKey: recommended.candidateKey,
                   error: null,
                 }
-              : createJourneyStateWithStatus('no-route'),
+              : {
+                  ...createJourneyStateWithStatus('no-route'),
+                  error: planningResult.outcome === 'no-path' ? planningResult.message ?? null : null,
+                },
           })
         })
       },
@@ -409,19 +400,6 @@ export function createNavigationSession(
           if (disposed || controller.signal.aborted || requestId !== journeyPlanningRequestId) return
           journeyPlanningAbortController = null
           dependencies.map.setJourneyOptions([], null)
-          if (error instanceof NoPathAvailableError) {
-            updateState({
-              path: {
-                status: 'no-route',
-                path: null,
-                candidates: [],
-                displayedCandidates: [],
-                selectedCandidateKey: null,
-                error: error.message,
-              },
-            })
-            return
-          }
           updateState({
             path: {
               status: 'failed',

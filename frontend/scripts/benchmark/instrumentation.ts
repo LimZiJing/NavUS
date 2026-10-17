@@ -3,7 +3,7 @@ import type {
   WalkingMatrixRequest,
   WalkingRouteEngine,
   WalkingRouteRequest,
-} from '../../src/pathfinding/walking/walking-contracts.js'
+} from '../../../backend/src/pathfinding/walking/walking-contracts.js'
 import type { PathfindingBenchmarkMatrixResult } from './outcome.js'
 
 export interface MeasuredWalkingRouteEngine extends WalkingRouteEngine {

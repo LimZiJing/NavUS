@@ -125,6 +125,51 @@ async function waitForSnapshot(liveData: Awaited<ReturnType<typeof createBackend
 }
 
 describe('Express live transit API', () => {
+  it('stops a cancelled Journey waiting without cancelling shared service-window data', async () => {
+    let markStarted = (): void => {}
+    let resolveResponse: (response: Response) => void = () => {}
+    const started = new Promise<void>((resolve) => { markStarted = resolve })
+    const upstreamResponse = new Promise<Response>((resolve) => { resolveResponse = resolve })
+    const liveData = await createBackendLiveData(createConfig(''), backendData, {
+      fetcher: async (input) => {
+        if (String(input).endsWith('/route-min-max-time')) {
+          markStarted()
+          return upstreamResponse
+        }
+        throw new Error('Unexpected upstream request: ' + String(input))
+      },
+      now: () => fixedNow,
+      ltaMappings: [],
+    })
+    const cancelledController = new AbortController()
+    const cancelledRequest = liveData.getServiceWindows(['D1'], cancelledController.signal)
+      .then(() => null, (error: unknown) => error)
+    const activeRequest = liveData.getServiceWindows(['D1'])
+
+    try {
+      await started
+      cancelledController.abort()
+      const cancelledResult = await Promise.race([
+        cancelledRequest,
+        new Promise<never>((_, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Cancelled Journey kept waiting for shared data')), 2_000)
+          timeout.unref()
+        }),
+      ])
+      assert.equal(cancelledResult instanceof Error ? cancelledResult.name : '', 'AbortError')
+
+      resolveResponse(jsonResponse({
+        data: {
+          RouteMinMaxTime: [{ FirstTime: '06:00', LastTime: '23:00', DayType: 'Daily', Dates: '' }],
+        },
+      }))
+      const result = await activeRequest
+      assert.equal(result.routes.D1?.[0]?.firstTime, '06:00')
+    } finally {
+      await liveData.stop()
+    }
+  })
+
   it('uses NUS provider stop names when loading the initial shuttle snapshot', async () => {
     const receivedStopNames: string[] = []
     const fetcher: typeof fetch = async (input, init) => {

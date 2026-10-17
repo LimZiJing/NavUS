@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { WalkingRouteEngine } from '../../src/pathfinding/walking/walking-contracts'
+import type { WalkingRouteEngine } from '../../../backend/src/pathfinding/walking/walking-contracts'
 import { createMeasuredRouteEngine } from './instrumentation'
 
 const routeEngine: WalkingRouteEngine = {

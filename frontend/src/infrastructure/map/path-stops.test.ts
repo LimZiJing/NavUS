@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BusRoute } from '@navus/shared/transit/types'
-import type { BusPathLeg } from '../../pathfinding/path'
+import type { BusPathLeg } from '@navus/shared/routing/path'
 import { getBusPathLegStopIds } from './path-stops'
 
 const route: BusRoute = {

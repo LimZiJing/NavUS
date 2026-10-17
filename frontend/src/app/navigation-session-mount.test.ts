@@ -109,7 +109,7 @@ function createMountDependencies(
     createNavigationSession: vi.fn(() => session),
     loadVenues: vi.fn(async () => ({ venues: {}, venueCount: 0 })),
     loadTransit: vi.fn(async () => new Promise<LoadedTransitData>(() => undefined)),
-    pathfinder: vi.fn(async () => null),
+    pathfinder: vi.fn(async () => ({ outcome: 'no-path' as const })),
     locationTracker,
     getMapOptions: () => mapOptions,
   }

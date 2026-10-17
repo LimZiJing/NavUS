@@ -1,5 +1,5 @@
-import type { Path } from '../pathfinding/path'
-import type { ScoredPathCandidate } from '../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
+import type { ScoredPathCandidate } from '@navus/shared/routing/path'
 
 export type JourneyStatus = 'idle' | 'loading' | 'ready' | 'no-route' | 'failed'
 

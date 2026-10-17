@@ -89,3 +89,36 @@ export {
   PUBLIC_BUS_ARRIVAL_MAX_AGE_MS,
 } from './transit/public-bus-arrivals.ts'
 export type { ShuttleServiceWindow } from './transit/service-hours.ts'
+
+export type {
+  TripCoordinate,
+  TripEndpoint,
+  ApiJourneyPlanningRequest,
+  ApiJourneyPlanningResponse,
+  ApiJourneyPlanningError,
+  ApiJourneyPlanningErrorCode,
+  PathGeometry,
+  PathLeg,
+  WalkingPathLeg,
+  BusPathLeg,
+  PathQuality,
+  Path,
+  ScoredPathCandidate,
+  PathEndpointLocation,
+} from './routing/path.ts'
+export { parseApiJourneyPlanningResponse } from './routing/validation.ts'
+
+export { createTransitIndex, createTransitNetworkIndex, TransitIndexPreconditionError } from './transit/index.ts'
+export type { TransitIndex, TransitNetworkIndex } from './transit/index.ts'
+export {
+  SHUTTLE_SERVICE_START_GRACE_MINUTES,
+  SHUTTLE_SERVICE_HOURS_REFRESH_INTERVAL_MS,
+  getNextShuttleServiceStart,
+  evaluateShuttleService,
+  describeShuttleServiceUnavailable,
+} from './transit/service-hours-policy.ts'
+export type {
+  ShuttleServiceStatus,
+  ShuttleServiceEvaluation,
+  ShuttleServiceStart,
+} from './transit/service-hours-policy.ts'

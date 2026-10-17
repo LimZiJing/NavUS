@@ -61,7 +61,7 @@ budget ends. Duplicate walking route requests are shared across candidates.
 Search is bounded by 350 ms and 10,000 expanded Path candidates, including
 indexing and candidate generation. The engine indexes directed walking links
 and ride timing, checks cancellation and elapsed time during enumeration, and
-yields during browser searches. Route-stop projections are cached per route
+yields to the event loop during searches. Route-stop projections are cached per route
 and stop so candidate rides reuse geometry work. Cancellation remains distinct
 from budget exhaustion. When a search or geometry-enrichment budget is reached,
 return only complete best-so-far candidates and mark them `bounded`. An

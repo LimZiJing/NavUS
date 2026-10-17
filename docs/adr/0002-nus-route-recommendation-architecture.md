@@ -98,7 +98,7 @@ The UI should call the output a `Recommended journey` and show that its duration
 
 ## Search completion and responsiveness
 
-The planner must preserve Path validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Browser requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Path is marked `exact`. If the budget is reached after a complete Path has been found, that Path is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Path exists. If no complete multimodal Path is found, the application may return a valid walking-only fallback or a clear failure.
+The planner must preserve Path validity even when it cannot finish an exhaustive search quickly. The exact planner uses the same deterministic cost and tie-breaking rules above. Express requests use a cancellable bounded search with a priority queue and cooperative yields between search batches. If the search finishes within its budget, the Path is marked `exact`. If the budget is reached after a complete Path has been found, that Path is returned as `bounded`: it is valid and is the best result found so far, but NavUS does not claim that no faster Path exists. If no complete multimodal Path is found, the application may return a valid walking-only fallback or a clear failure.
 
 This is a responsiveness policy, not a change to the Valhalla boundary or the canonical shuttle source of truth. The UI presents both exact and bounded results as `Recommended journey` and explains the tradeoff when a bounded result may not be globally fastest.
 
@@ -157,8 +157,8 @@ Costs and limitations:
 ## Implementation boundaries
 
 - `docs/shuttle-timing.md` owns the timing policy; the linked research note records NUS provider normalization.
-- `frontend/src/pathfinding/walking/` owns the walking provider boundary and connection selection.
-- `frontend/src/pathfinding/search/` owns pure candidate generation, scoring, and budget control.
+- `backend/src/pathfinding/walking/` owns the walking provider boundary and connection selection.
+- `backend/src/pathfinding/search/` owns pure candidate generation, scoring, and budget control.
 - `frontend/src/app/navigation-session.ts` owns request identity and cancellation.
 - MapLibre rendering and Plan presentation remain outside pure pathfinding.
 

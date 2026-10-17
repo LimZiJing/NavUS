@@ -5,6 +5,7 @@ import { createApp } from './http/app.ts'
 import { loadBackendConfig } from './config.ts'
 import { loadCanonicalData } from './canonical-data.ts'
 import { createBackendLiveData } from './live-data/runtime.ts'
+import { createPathfindingService } from './pathfinding/service.ts'
 import type { BackendConfig } from './config.ts'
 
 export function listenHttpServer(
@@ -41,7 +42,8 @@ async function startBackend(): Promise<void> {
   const config: BackendConfig = loadBackendConfig()
   const data = await loadCanonicalData(config.dataDirectory, config.dataVersion)
   const liveData = await createBackendLiveData(config, data)
-  const server = await listenHttpServer(createApp(config, data, liveData), config.host, config.port)
+  const pathfinding = createPathfindingService(data, liveData, config)
+  const server = await listenHttpServer(createApp(config, data, liveData, pathfinding), config.host, config.port)
   liveData.start()
   console.info('NavUS Express API is listening.', {
     host: config.host,

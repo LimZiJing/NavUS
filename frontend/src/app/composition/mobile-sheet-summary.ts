@@ -1,4 +1,4 @@
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import { formatDuration } from '../../domain/trip/duration-format'
 import type { TripRequest } from '../../domain/trip/types'
 import type { ExploreState } from '../../features/explore/state/explore-state'

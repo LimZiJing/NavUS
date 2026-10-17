@@ -1,9 +1,5 @@
-export type TripEndpoint = (
-  | { readonly kind: 'venue'; readonly id: string }
-  | { readonly kind: 'building'; readonly id: string }
-  | { readonly kind: 'stop'; readonly id: string }
-  | { readonly kind: 'current-location'; readonly coordinate: TripCoordinate }
-)
+export type TripEndpoint = import('@navus/shared/routing/path').TripEndpoint
+export type TripCoordinate = import('@navus/shared/routing/path').TripCoordinate
 
 export type TripEndpointRole = 'origin' | 'destination'
 
@@ -16,9 +12,4 @@ export type TripLocationSearchResult = {
   endpoint: TripEndpoint
   label: string
   detail: string
-}
-
-export interface TripCoordinate {
-  readonly longitude: number
-  readonly latitude: number
 }

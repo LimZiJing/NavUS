@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { searchPathsWithinBudget } from '../../src/pathfinding/search/search-path-candidates'
+import { searchPathsWithinBudget } from '../../../backend/src/pathfinding/search/search-path-candidates'
 import { loadPathfindingBenchmarkManifest } from './manifest'
 import { createPathfindingBenchmarkCases, loadPathfindingBenchmarkFixtures } from './fixtures'
 import { validatePathfindingBenchmarkOutcome } from './outcome'

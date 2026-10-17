@@ -1,10 +1,10 @@
 import {
   createFindPathsService,
   NoPathAvailableError,
-} from '../../../src/pathfinding/find-paths.js'
-import { searchPathsWithinBudget } from '../../../src/pathfinding/search/search-path-candidates.js'
-import type { Path } from '../../../src/pathfinding/path.js'
-import { createWalkingConnectionProvider } from '../../../src/pathfinding/walking/walking-connections.js'
+} from '../../../../backend/src/pathfinding/find-paths.js'
+import { searchPathsWithinBudget } from '../../../../backend/src/pathfinding/search/search-path-candidates.js'
+import type { Path } from '../../../../backend/src/pathfinding/path.js'
+import { createWalkingConnectionProvider } from '../../../../backend/src/pathfinding/walking/walking-connections.js'
 import type {
   PathfindingBenchmarkAdapterFactory,
   PathfindingBenchmarkOutcome,

@@ -2,7 +2,7 @@ import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
-import type { FindPathsService } from '../pathfinding/find-paths'
+import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import type {
   NavigationSession,
   NavigationSessionDependencies,
@@ -15,7 +15,7 @@ export interface NavigationSessionMountDependencies {
   ) => NavigationSession
   readonly loadVenues: (signal: AbortSignal) => Promise<LoadedVenueData>
   readonly loadTransit: (signal: AbortSignal) => Promise<LoadedTransitData>
-  readonly pathfinder: FindPathsService
+  readonly pathfinder: JourneyPlanningClient
   readonly locationTracker: LocationTracker
   readonly onStopSelected?: (stopId: string) => boolean
   readonly onMapStopInteraction?: (stopId: string) => void

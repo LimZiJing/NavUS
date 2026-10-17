@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { isIP } from 'node:net'
 import {
   LOCAL_DATA_VERSION,
   SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS,
@@ -36,6 +37,8 @@ export interface BackendConfig {
   readonly corsOrigins: readonly string[]
   readonly dataVersion: string
   readonly dataDirectory: string
+  readonly valhallaBaseUrl: string
+  readonly journeyRequestTimeoutMs: number
   readonly liveData: {
     readonly shuttleRefreshIntervalMs: number
     readonly requestTimeoutMs: number
@@ -132,6 +135,42 @@ function parseNusProviderConfig(
   })
 }
 
+function isPrivateNetworkAddress(hostname: string): boolean {
+  const address = hostname.replace(/^\[|\]$/g, '')
+  const version = isIP(address)
+  if (version === 4) {
+    const octets = address.split('.').map(Number)
+    const [first, second] = octets
+    return first === 127 || first === 10 ||
+      (first === 172 && second! >= 16 && second! <= 31) ||
+      (first === 192 && second === 168)
+  }
+  if (version === 6) {
+    const normalized = address.toLowerCase()
+    return normalized === '::1' || normalized.startsWith('fc') || normalized.startsWith('fd')
+  }
+  const localName = address.toLowerCase()
+  return localName === 'localhost' || localName.endsWith('.localhost') ||
+    localName.endsWith('.local') || localName.endsWith('.internal') || !localName.includes('.')
+}
+
+function parseValhallaBaseUrl(value: string | undefined): string {
+  const configured = value?.trim() || 'http://127.0.0.1:8002'
+  let url: URL
+  try {
+    url = new URL(configured)
+  } catch {
+    throw new Error('VALHALLA_BASE_URL must be a valid HTTP or HTTPS URL')
+  }
+  if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password || url.search || url.hash) {
+    throw new Error('VALHALLA_BASE_URL must be an HTTP or HTTPS URL without credentials or query data')
+  }
+  // Keep server-side routing private even when this setting is supplied outside development.
+  if (!isPrivateNetworkAddress(url.hostname)) {
+    throw new Error('VALHALLA_BASE_URL must use a loopback or private-network address')
+  }
+  return configured.replace(/\/+$/, '')
+}
 export function loadBackendConfig(
   environment: Record<string, string | undefined> = process.env,
   workingDirectory = process.cwd(),
@@ -175,6 +214,14 @@ export function loadBackendConfig(
     corsOrigins,
     dataVersion,
     dataDirectory: resolve(workingDirectory, dataPath),
+    valhallaBaseUrl: parseValhallaBaseUrl(environment.VALHALLA_BASE_URL),
+    journeyRequestTimeoutMs: parseInteger(
+      environment.JOURNEY_REQUEST_TIMEOUT_MS,
+      10_000,
+      'JOURNEY_REQUEST_TIMEOUT_MS',
+      100,
+      60_000,
+    ),
     liveData: Object.freeze({
       shuttleRefreshIntervalMs: parseInteger(
         environment.NUS_SHUTTLE_REFRESH_INTERVAL_MS,

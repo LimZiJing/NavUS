@@ -27,7 +27,7 @@ export interface BackendLiveData {
   isSnapshotReady(): boolean
   getPublicBusStopIds(): readonly string[]
   getBusArrivals(stopIds: readonly string[]): ApiShuttleArrivalsResponse
-  getServiceWindows(routeIds: readonly string[]): Promise<ApiShuttleServiceWindowsResponse>
+  getServiceWindows(routeIds: readonly string[], signal?: AbortSignal): Promise<ApiShuttleServiceWindowsResponse>
   getPublicBusArrivals(stopIds: readonly string[]): Promise<ApiPublicBusArrivalsResponse>
   start(): void
   stop(): Promise<void>
@@ -53,6 +53,38 @@ interface BackendLiveDataOptions {
 
 function toIso(timestampMs: number): string {
   return new Date(timestampMs).toISOString()
+}
+
+function waitForRequest<Value>(operation: Promise<Value>, signal?: AbortSignal): Promise<Value> {
+  if (!signal) return operation
+  if (signal.aborted) {
+    return Promise.reject(signal.reason ?? new DOMException('The operation was aborted', 'AbortError'))
+  }
+
+  return new Promise((resolve, reject) => {
+    const cleanup = () => signal.removeEventListener('abort', abort)
+    const abort = () => {
+      cleanup()
+      reject(signal.reason ?? new DOMException('The operation was aborted', 'AbortError'))
+    }
+    signal.addEventListener('abort', abort, { once: true })
+    operation.then(
+      (value) => {
+        cleanup()
+        resolve(value)
+      },
+      (error: unknown) => {
+        cleanup()
+        reject(error)
+      },
+    )
+  })
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw signal.reason ?? new DOMException('The operation was aborted', 'AbortError')
+  }
 }
 
 export async function createBackendLiveData(
@@ -199,15 +231,18 @@ export async function createBackendLiveData(
       } satisfies ApiShuttleArrivalsResponse
       return selected
     },
-    getServiceWindows(routes) {
-      const signal = shutdownController.signal
+    getServiceWindows(routes, requestSignal) {
       const operation = (async (): Promise<ApiShuttleServiceWindowsResponse> => {
-        const entries = await mapWithConcurrency(routes, config.liveData.maxConcurrency, async (routeId) => ({
-          routeId,
-          data: nusServiceWindows
-            ? await nusServiceWindows.load(routeId, signal)
-            : null,
-        }))
+        const entries = await mapWithConcurrency(routes, config.liveData.maxConcurrency, async (routeId) => {
+          throwIfAborted(requestSignal)
+          return {
+            routeId,
+            data: nusServiceWindows
+              // This fetch is shared and cached; one cancelled Journey must not cancel another caller's data.
+              ? await nusServiceWindows.load(routeId, shutdownController.signal)
+              : null,
+          }
+        })
         if (entries.some(({ data: entry }) => entry === null)) {
           throw new LiveDataRequestError(503, 'provider_unavailable', 'Shuttle service-window data is unavailable')
         }
@@ -220,7 +255,7 @@ export async function createBackendLiveData(
           routes: Object.fromEntries(available.map(([routeId, entry]) => [routeId, entry.windows])),
         }
       })()
-      return track(operation)
+      return waitForRequest(track(operation), requestSignal)
     },
     getPublicBusArrivals(stopIds) {
       if (!config.liveData.ltaAccountKey) {

@@ -5,10 +5,11 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 ## Ownership
 
 - `frontend/src/app` owns application composition, framework-free contracts, and application-level controllers such as the navigation session, cross-feature navigation, and responsive overlay layout.
-- `shared/src` owns transport contracts and reusable, Node-free transit, venue, and walking-graph types and validation used by both applications.
+- shared/src owns transport contracts, Path and Journey HTTP types, and reusable Node-free transit, venue, walking-graph, service-hours, and transit-index modules used by both applications.
 - `backend/src/server.ts` owns process startup and shutdown, while `backend/src/config.ts` and `backend/src/canonical-data.ts` own backend settings and canonical data loading.
-- `backend/src/http` owns Express middleware, route registration, and external request validation. Health and live-data handlers live in `http/routes/`; `http/routes/journeys.ts` is reserved for #233 and should be added with its implementation.
-- `backend/src/live-data/runtime.ts` composes live-data adapters, owns snapshot lifecycle, and exposes backend live-data operations without Express response construction.
+- backend/src/http owns Express middleware, route registration, and external request validation. Health, live-data, and Journey handlers live in http/routes/. POST /api/journeys validates endpoint references, applies a bounded deadline and per-client rate limit, and maps planner outcomes to the HTTP contract.
+- backend/src/pathfinding owns canonical endpoint resolution, the Pathfinding pipeline, and the server-side Valhalla adapter. Its service receives validated canonical data and live-data operations; HTTP routes do not construct planner inputs themselves.
+- backend/src/live-data/runtime.ts composes live-data adapters, owns snapshot lifecycle, and exposes backend live-data operations without Express response construction.
 - `backend/src/live-data/bus-arrivals/snapshot.ts` owns provider-independent arrival snapshot generations and freshness.
 - `backend/src/live-data/providers/nus` and `backend/src/live-data/providers/lta` own provider authentication, mappings, requests, payload parsing, and provider caches. Provider credentials stay in backend configuration.
 - `backend/src/live-data/upstream` owns reusable concurrency, retry, and timeout controls used by provider modules.
@@ -16,7 +17,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/features` owns the Explore, Stops, and Plan workflows, including their state, intent commands, content components, and feature-specific styles.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
-- `frontend/src/pathfinding` owns the provider-injected Path model, bounded search, ordered planning pipeline, and its walking provider boundary. The app composition supplies validated transit data, timing callbacks, clocks, cooperative yields, and cancellation; Plan presentation and MapLibre rendering stay outside this folder.
+- frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
 
 `frontend/public/data` remains the canonical checked-in data source. Frontend infrastructure and the backend load external data as `unknown`, use the shared validators, and return only validated domain data.
 
@@ -26,35 +27,35 @@ Application contracts must be small, framework-free interfaces in `frontend/src/
 
 The intended direction is:
 
-```text
-             frontend/src/app (composition)
-              | runtime --> frontend/src/features
-              | runtime --> frontend/src/ui
-              | runtime --> frontend/src/infrastructure --> frontend/src/domain
-              | runtime --> frontend/src/pathfinding --> frontend/src/domain/shared
+frontend/src/app (composition)
+  -> frontend/src/features and frontend/src/ui
+  -> frontend/src/infrastructure
+       -> frontend/src/domain
+       -> shared/src
 
-       frontend/src/app -- state/callbacks --> frontend/src/features
-       frontend/src/features -------------------------------> frontend/src/domain
-       frontend/src/features -------------------------------> frontend/src/ui contracts
-       frontend/src/features -- import type --> frontend/src/pathfinding/path.ts
-       frontend/src/infrastructure -- import type --> frontend/src/pathfinding/path.ts
-       frontend/src/infrastructure - - import type only - -> frontend/src/app/contracts
-```
+frontend/src/app/navigation-session
+  -> frontend/src/infrastructure/pathfinding/client
+  -> shared/src/routing/path
+
+backend/src/http/routes/journeys
+  -> backend/src/pathfinding/service
+       -> backend/src/pathfinding pipeline, search, and walking
+       -> backend/src/live-data/runtime
+       -> backend/src/canonical-data
+       -> shared/src
 
 - Domain modules must not import React, MapLibre, browser DOM APIs, network clients, or other infrastructure.
 - The app composition root may runtime-import feature entry points, UI entry points, and infrastructure adapters to wire the application.
-- Infrastructure may depend on frontend domain and shared types and implement framework-free app contracts. Map presentation may also use `import type` from the public `frontend/src/pathfinding/path.ts` model; it must not import Pathfinding runtime helpers or internals. Infrastructure may use `import type` from `frontend/src/app/contracts` for its ports; these type-only edges are erased at runtime and do not create runtime dependency cycles.
-- Infrastructure must not make any other import from `frontend/src/app`, including runtime imports or imports from app controllers. It owns MapLibre, network/data-adapter, and integration-level DOM, listener, timer, and asynchronous effects.
-- Application controllers may use browser measurements, observers, or listeners only to coordinate app-owned responsive layout or cross-feature keyboard navigation. Keep these effects in the owning app controller and clean them up with its lifecycle.
-- Features depend on frontend domain or shared values, UI contracts or primitives, and may use `import type` from the public `frontend/src/pathfinding/path.ts` contract. They must not import Pathfinding runtime values or its search, pipeline, and walking internals. Features must not import `frontend/src/app/contracts`, concrete infrastructure adapters, MapLibre, network clients, or another feature's internals.
+- Frontend features and MapLibre presentation may import Path and Journey contract types from shared/src/routing; they must not import backend runtime modules.
+- The frontend pathfinding client owns HTTP, JSON parsing, and cancellation forwarding. It does not resolve canonical endpoint coordinates.
+- The backend HTTP route validates untrusted input and translates planner outcomes into HTTP responses. It does not build planner dependencies.
+- The backend planner resolves canonical venue, building/group, and stop references from loaded data. It receives the live-data runtime and a Valhalla adapter through its composition seam.
+- Shared modules remain free of Node, browser, Express, and provider dependencies.
 - Cross-feature coordination is performed by app composition through passed state and callbacks rather than direct feature-to-feature or feature-to-app-contract imports.
-- The app composition root passes application state and callbacks into feature entry points; features translate user intent through their UI contracts.
-- UI modules must not reach into application internals or infrastructure. They receive state and callbacks through props or small framework-free interfaces.
 
 The diagram describes allowed ownership and dependency direction; it does not require every module to import every lower layer.
 
-Backend dependencies flow from HTTP routes and validation to the live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules.
-
+Backend dependencies flow from HTTP routes and validation to the pathfinding composition seam and live-data runtime, then to provider adapters, snapshot logic, and reusable upstream controls. Provider modules do not import Express; provider-independent snapshot code does not import provider modules.
 ## State, callbacks, and seams
 
 - Feature modules own workflow state such as search queries, selections, and commands. UI modules may own only transient presentation state that has no domain meaning.
@@ -63,7 +64,7 @@ Backend dependencies flow from HTTP routes and validation to the live-data runti
 - `NavigationPanelShell` keeps the desktop/mobile presentation seam. The app-owned `MobileSheet` module under `frontend/src/ui/mobile/` contains the Base UI Drawer integration; application navigation owns detents, and feature views receive state and callbacks without importing the library.
 - Pure transformations and validators remain free of I/O, mutation, DOM work, and MapLibre effects.
 
-The `pathfinding/` folder is the focused exception to the general infrastructure placement for walking effects: its `walking/` modules own the Valhalla client and directed stop-graph connection provider so walking effects stay with the pathfinding engine. Keep provider-specific payload parsing inside `valhalla-walking-client.ts`, and expose only the normalized `WalkingRouteEngine` contract to the pipeline.
+The backend pathfinding module owns the walking effects alongside the planner: its walking modules own the Valhalla client and directed stop-graph connection provider. Provider-specific payload parsing stays inside valhalla-walking-client.ts, and the pipeline sees only the normalized WalkingRouteEngine contract.
 
 ## Migration map and order
 
@@ -78,7 +79,8 @@ Split `frontend/src/transit/render.ts` at its pure/effect boundary: reusable tra
 | Explore route browsing and venue workflows | `frontend/src/features/explore` |
 | Nearby and favourite stop workflows and stop-specific UI | `frontend/src/features/stops` |
 | Trip endpoints and Path presentation | `frontend/src/features/plan` |
-| Path model, search, ordered planning stages, and walking boundary | `frontend/src/pathfinding` |
+| Path and Journey HTTP types | shared/src/routing |
+| Search, ordered planning stages, and walking boundary | backend/src/pathfinding |
 | Genuinely reusable primitives and layouts currently under `frontend/src/components` | `frontend/src/ui` |
 | Shared navigation, desktop/mobile layout, mobile-sheet, route-chip, and reusable control styles | `frontend/src/ui/styles` |
 | Only the remaining MapLibre rendering and effect responsibilities in `frontend/src/transit/render.ts`, plus `frontend/src/map`, data loaders, MapLibre lifecycle, markers, layers, and popups | `frontend/src/infrastructure` |

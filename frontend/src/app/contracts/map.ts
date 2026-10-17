@@ -4,7 +4,7 @@ import type {
   BusRoute,
 } from '@navus/shared/transit/types'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
-import type { Path } from '../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { VenueLocation, VenueLocationMap } from '@navus/shared/venue/types'
 import type { LoadedTransitData } from './data'

@@ -6,8 +6,8 @@ import { buildBuildingIndex } from '../../../domain/venue/building-index'
 import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import type { TransitStopInput } from '@navus/shared/transit/types'
-import type { Path } from '../../../pathfinding/path'
-import type { ScoredPathCandidate } from '../../../pathfinding/path'
+import type { Path } from '@navus/shared/routing/path'
+import type { ScoredPathCandidate } from '@navus/shared/routing/path'
 import type { VenueLocationMap } from '@navus/shared/venue/types'
 
 const venues: VenueLocationMap = {

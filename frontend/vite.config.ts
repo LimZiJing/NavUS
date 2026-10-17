@@ -37,10 +37,6 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'http://127.0.0.1:3001',
         },
-        '/valhalla': {
-          target: 'http://127.0.0.1:8002',
-          rewrite: (path) => path.replace(/^\/valhalla/, ''),
-        },
       },
     },
   }

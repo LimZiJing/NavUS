@@ -1,14 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import type { LoadedTransitData } from '../../src/app/contracts/data.js'
-import type { PathEndpointLocation } from '../../src/pathfinding/path.js'
+import type { PathEndpointLocation } from '../../../backend/src/pathfinding/path.js'
 import {
   createLiveBusWaitingTimeProvider,
-} from '../../src/pathfinding/pipeline/apply-bus-waits.js'
+} from '../../../backend/src/pathfinding/pipeline/apply-bus-waits.js'
 import type {
   PathSearchInput,
   PathWalkingConnection,
-} from '../../src/pathfinding/search/search-path-candidates.js'
+} from '../../../backend/src/pathfinding/search/search-path-candidates.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
 import { validateTransitMapData } from '@navus/shared/transit/map-data'
