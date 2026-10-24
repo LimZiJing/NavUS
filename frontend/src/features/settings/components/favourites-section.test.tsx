@@ -24,7 +24,7 @@ describe('Favourites settings', () => {
 
     const removeButton = screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' })
     expect(removeButton.getAttribute('aria-pressed')).toBe('true')
-    expect(removeButton.getAttribute('data-size')).toBe('lg')
+    expect(removeButton.getAttribute('data-size')).toBe('sm')
     await user.click(removeButton)
     expect(onRemove).toHaveBeenCalledExactlyOnceWith('COM3')
     expect(screen.getByRole('status').textContent).toBe('COM3 (Opp COM2) removed from favourites.')
@@ -42,9 +42,9 @@ describe('Favourites settings', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(onClear).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Clear all favourites' }))
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(onClear).toHaveBeenCalledOnce()
   })
 
@@ -52,6 +52,6 @@ describe('Favourites settings', () => {
     render(<FavouritesSection stops={[]} onRemove={() => undefined} onClear={() => undefined} />)
 
     expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Clear all favourites' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
   })
 })

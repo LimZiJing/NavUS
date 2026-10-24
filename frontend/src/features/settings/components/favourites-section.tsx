@@ -40,7 +40,7 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
                 <IconButton
                   className="settings-favourite-remove"
                   variant="plain"
-                  size="lg"
+                  size="sm"
                   label={`Remove ${stop.name} from favourites`}
                   icon={<FavoriteIcon filled />}
                   pressed
@@ -52,7 +52,7 @@ export function FavouritesSection({ stops, onRemove, onClear }: FavouritesSectio
           <div className="settings-favourites-actions">
             <Button
               className="settings-favourites-clear"
-              label="Clear all favourites"
+              label="Clear all"
               onClick={clearAllStops}
             />
           </div>
