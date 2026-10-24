@@ -50,18 +50,27 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     snapshot: null,
   }))
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const stopKey = stops
+  const requestedStopKey = stops
     .map(({ stopId, stopName }) => `${stopId}\u0000${stopName}`)
     .sort()
     .join('\u0001')
-  const hasActiveStops = active && stops.length > 0
+  // The polled stop set only follows the request while the view is active, so polling keeps
+  // running in the background after the user leaves without chasing map pans elsewhere.
+  const [polled, setPolled] = useState(() => active
+    ? { stopKey: requestedStopKey, stops }
+    : { stopKey: null as string | null, stops: [] as readonly StopsArrivalStopRequest[] })
+  if (active && polled.stopKey !== requestedStopKey) {
+    setPolled({ stopKey: requestedStopKey, stops })
+  }
+  const stopKey = polled.stopKey ?? ''
+  const hasActiveStops = polled.stops.length > 0
   // Location updates can recreate this array without changing the request.
-  const latestStopsRef = useRef(stops)
+  const latestStopsRef = useRef(polled.stops)
   const previousStopKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
-    latestStopsRef.current = stops
-  }, [stops])
+    latestStopsRef.current = polled.stops
+  }, [polled.stops])
 
   useEffect(() => {
     if (!hasActiveStops) return

@@ -200,26 +200,43 @@ describe('useStopsArrivals', () => {
     expect(screen.getByTestId('snapshot').textContent).toBe(currentSnapshot.observedAt)
   })
 
-  it('does not request while inactive and aborts an active request during cleanup', async () => {
-    let resolveRequest: (value: ShuttleArrivalSnapshot) => void = () => undefined
-    let requestSignal: AbortSignal | undefined
-    const client: StopsArrivalLoader = vi.fn((_requestedStops, signal) => {
-        requestSignal = signal
-        return new Promise<ShuttleArrivalSnapshot>((resolve) => {
-          resolveRequest = resolve
-        })
-      })
+  it('does not request before it has been active', async () => {
+    vi.useFakeTimers()
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
 
     const { rerender } = render(<Probe client={client} active={false} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
     expect(client).not.toHaveBeenCalled()
 
     rerender(<Probe client={client} active />)
-    await waitFor(() => expect(client).toHaveBeenCalledOnce())
-    expect(requestSignal?.aborted).toBe(false)
+    await act(async () => undefined)
+    expect(client).toHaveBeenCalledOnce()
+  })
 
-    rerender(<Probe client={client} active={false} />)
-    expect(requestSignal?.aborted).toBe(true)
-    resolveRequest(snapshot)
+  it('keeps refreshing the last stop set in the background after becoming inactive', async () => {
+    vi.useFakeTimers()
+    const client: StopsArrivalLoader = vi.fn(async () => snapshot)
+    const otherStops = [{ stopId: 'STOP-B', stopName: 'Stop B' }]
+
+    const { rerender } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+    expect(client).toHaveBeenCalledOnce()
+
+    rerender(<Probe client={client} active={false} stops={otherStops} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+
+    expect(client).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(client).mock.calls[1]?.[0]).toEqual(stops)
+    expect(screen.getByTestId('snapshot').textContent).toBe(snapshot.observedAt)
+
+    rerender(<Probe client={client} active />)
+    await act(async () => undefined)
+    expect(client).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('status').textContent).toBe('ready')
   })
 
   it('publishes an error state when the arrivals interface fails', async () => {
