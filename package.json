@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "worktree:setup": "node scripts/worktree/setup.mjs",
     "build": "npm --workspace @nusgo/shared run typecheck && npm --workspace @nusgo/backend run typecheck && npm --workspace @nusgo/frontend run build",
     "lint": "eslint --config frontend/eslint.config.js frontend backend/src shared/src && node frontend/scripts/lint-css.mjs",
     "preview": "npm --workspace @nusgo/frontend run preview",
