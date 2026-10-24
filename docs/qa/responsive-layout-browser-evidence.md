@@ -77,4 +77,4 @@ Real Chrome, a real software keyboard, physical safe-area hardware, and the full
 
 ## Release QA follow-up — 2026-09-21
 
-The [canonical release record](manual-smoke-check.md) contains the detailed 1280 × 720 production-preview evidence. Earlier Edge headless/device-emulation evidence remains useful for the recorded mobile and breakpoint facts, but the full manual release checklist, real Chrome/Edge, physical software keyboard, safe-area hardware, and failure injection remain open.
+The [canonical release record](evidence-log.md) contains the detailed 1280 × 720 production-preview evidence. Earlier Edge headless/device-emulation evidence remains useful for the recorded mobile and breakpoint facts, but the full manual release checklist, real Chrome/Edge, physical software keyboard, safe-area hardware, and failure injection remain open.

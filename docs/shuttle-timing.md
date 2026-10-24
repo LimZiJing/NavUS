@@ -11,7 +11,7 @@ provider API, credentials, deployment, or UI implementation.
 - This document defines the provider-neutral timing policy and contract consumed by pathfinding.
 - NUS-specific request and response normalization is recorded in [the NUS shuttle API contract](research/nus-shuttle-api-contract.md).
 - Pathfinding applies the contract to every candidate Journey and transfer.
-- Live-data boundary checks and release evidence are recorded in [the manual smoke checklist](qa/manual-smoke-check.md).
+- Live-data boundary checks and release evidence are recorded in [the evidence log](qa/evidence-log.md).
 
 ## Units and terminology
 
