@@ -129,6 +129,12 @@ describe('backend live-data settings', () => {
     assert.equal(config.liveData.ltaAccountKey, '')
   })
 
+  it('defaults the first shuttle snapshot to 28 minimum stops and loads an override', () => {
+    assert.equal(loadBackendConfig({}, 'C:/nusgo/backend').liveData.minFirstSnapshotStops, 28)
+    assert.equal(loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '20' }).liveData.minFirstSnapshotStops, 20)
+    assert.equal(loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '33' }).liveData.minFirstSnapshotStops, 33)
+  })
+
   it('loads NUS and LTA secrets only into backend configuration', () => {
     const config = loadBackendConfig({
       NUS_BUS_PROXY_BASE_URL: 'https://bus-proxy.nus.example',
@@ -165,5 +171,11 @@ describe('backend live-data settings', () => {
     assert.throws(() => loadBackendConfig({ NUS_SHUTTLE_REFRESH_INTERVAL_MS: '999' }), /NUS_SHUTTLE_REFRESH_INTERVAL_MS/)
     assert.throws(() => loadBackendConfig({ LIVE_DATA_MAX_CONCURRENCY: '17' }), /LIVE_DATA_MAX_CONCURRENCY/)
     assert.throws(() => loadBackendConfig({ LIVE_DATA_RETRY_ATTEMPTS: '4' }), /LIVE_DATA_RETRY_ATTEMPTS/)
+  })
+
+  it('rejects out-of-range and non-integer first-snapshot stop minimums', () => {
+    assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '0' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
+    assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '34' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
+    assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '2.5' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
   })
 })

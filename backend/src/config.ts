@@ -47,6 +47,7 @@ export interface BackendConfig {
     readonly shuttleRefreshIntervalMs: number
     readonly requestTimeoutMs: number
     readonly maxConcurrency: number
+    readonly minFirstSnapshotStops: number
     readonly retryAttempts: number
     readonly retryBaseDelayMs: number
     readonly nusProvider: NusProviderConfig | null
@@ -277,6 +278,13 @@ export function loadBackendConfig(
         'LIVE_DATA_MAX_CONCURRENCY',
         1,
         16,
+      ),
+      minFirstSnapshotStops: parseInteger(
+        environment.LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS,
+        28,
+        'LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS',
+        1,
+        33,
       ),
       retryAttempts: parseInteger(environment.LIVE_DATA_RETRY_ATTEMPTS, 1, 'LIVE_DATA_RETRY_ATTEMPTS', 0, 3),
       retryBaseDelayMs: parseInteger(environment.LIVE_DATA_RETRY_BASE_DELAY_MS, 200, 'LIVE_DATA_RETRY_BASE_DELAY_MS', 0, 5_000),
