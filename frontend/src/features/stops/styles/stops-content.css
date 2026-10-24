@@ -94,6 +94,7 @@
     border: 1px solid var(--border-card);
     border-radius: var(--radius-card);
     background: var(--surface-card);
+    box-shadow: var(--shadow-sm);
   }
 
   .stop-card-header {
@@ -281,8 +282,38 @@
 
   .stop-actions .navigate-button,
   .stop-actions .stop-opposite {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     min-width: 0;
+    justify-content: center;
+  }
+
+  .stop-departures {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .stop-departures .stop-departure-list {
+    margin: 0 var(--space-2);
+    padding: var(--space-1) 0;
+    border-top: 0;
+  }
+
+  .stop-departures .stop-departure-row {
+    border-bottom-color: var(--border-default);
+  }
+
+  .stop-departures .stop-departure-list-empty {
+    padding: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .stop-departures .stop-departure-row:last-child {
+    border-bottom: 0;
   }
 
   .stop-selection h3 {
@@ -326,6 +357,7 @@
   .stop-departure-status {
     grid-column: 2 / -1;
     color: var(--text-muted);
+    text-align: right;
     font-size: var(--font-size-sm);
     line-height: 1.25;
   }

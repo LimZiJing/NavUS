@@ -77,7 +77,8 @@
   gap: 0;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-status);
-  background: var(--surface-raised);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -332,7 +333,7 @@
   width: 14px;
   height: 14px;
   margin-left: 2px;
-  border: 3px solid var(--surface-raised);
+  border: 3px solid var(--surface-card);
   border-radius: 50%;
   /* Match the marker's outer diameter to the rail's grid geometry. */
   box-sizing: border-box;
@@ -577,7 +578,7 @@
   width: 10px;
   height: 10px;
   margin-left: 4px;
-  border: 2px solid var(--surface-raised);
+  border: 2px solid var(--surface-card);
   border-radius: 50%;
   box-sizing: border-box;
   background: var(--journey-route-color, var(--status-info));
@@ -747,7 +748,7 @@
 .plan-trip-card {
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface-raised);
+  background: var(--surface-card);
   box-shadow: var(--shadow-sm);
 }
 
