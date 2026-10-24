@@ -263,6 +263,47 @@ describe('createShuttleArrivalClient', () => {
     })
   })
 
+  it('keeps unavailable stop ids scoped to the requested stops when combining cached stops', async () => {
+    const fetcher = vi.fn<typeof fetch>(async (input) => {
+      const requestedStopIds = JSON.parse(
+        new URL(String(input), 'http://localhost').searchParams.get('stops') ?? '[]',
+      ) as string[]
+      return new Response(JSON.stringify({
+        observedAt: '2026-09-23T13:48:26+08:00',
+        expiresAt: '2026-09-23T13:49:26+08:00',
+        snapshotVersion: '2026-09-23T13:48:26.000Z-1',
+        refreshedAt: '2026-09-23T13:48:26+08:00',
+        stops: Object.fromEntries(requestedStopIds.map((stopId) => [stopId, {}])),
+        unavailableStopIds: requestedStopIds.filter((stopId) => stopId !== 'PGP'),
+      }), { status: 200 })
+    })
+    const client = createShuttleArrivalClient({ fetcher, now: () => nowMs, cacheTtlMs: 60_000 })
+
+    const first = await client.getArrivals([{ stopId: 'PGP', stopName: 'PGP' }], new AbortController().signal)
+    const second = await client.getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+      { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
+    ], new AbortController().signal)
+    const third = await client.getArrivals([{ stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' }], new AbortController().signal)
+
+    expect(first.unavailableStopIds).toEqual([])
+    expect(second.unavailableStopIds).toEqual(['KR-MRT'])
+    expect(third.unavailableStopIds).toEqual(['KR-MRT'])
+  })
+
+  it('rejects an invalid unavailableStopIds list', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      observedAt: '2026-09-23T13:48:26+08:00',
+      expiresAt: '2026-09-23T13:49:26+08:00',
+      stops: {},
+      unavailableStopIds: [1],
+    }), { status: 200 }))
+
+    await expect(createShuttleArrivalClient({ fetcher }).getArrivals([
+      { stopId: 'PGP', stopName: 'PGP' },
+    ], new AbortController().signal)).rejects.toBeInstanceOf(ShuttleArrivalFetchError)
+  })
+
   it('keeps the current generation when a later response is older', async () => {
     let now = nowMs
     const fetcher = vi.fn<typeof fetch>()

@@ -228,6 +228,7 @@ export async function createBackendLiveData(
           const observation = snapshot.stopObservations?.[stopId]
           return observation ? [[stopId, observation]] : []
         })),
+        unavailableStopIds: (snapshot.unavailableStopIds ?? []).filter((stopId) => stopIds.includes(stopId)),
       } satisfies ApiShuttleArrivalsResponse
       return selected
     },

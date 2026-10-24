@@ -93,6 +93,9 @@ export function createLiveBusWaitingTimeProvider(
   nowMs: number,
 ): BusWaitingTimeProvider {
   return (_record, context) => {
+    // An unavailable stop has no live data at all, so it must not fall back to the snapshot's observedAt.
+    if (snapshot.unavailableStopIds?.includes(context.boardingStopId)) return null
+
     const stop = snapshot.stops[context.boardingStopId]
     const route = stop?.[context.routeId]
     if (!route) return null

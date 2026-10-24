@@ -8,7 +8,7 @@ During local development, Vite forwards `/api` requests to Express at `http://12
 
 All live-data routes accept GET:
 
-- /api/shuttle-arrivals?stops=<JSON array> returns selected canonical stop IDs from the latest bus-arrival snapshot. It includes a snapshot version and observation and expiry times for each stop.
+- /api/shuttle-arrivals?stops=<JSON array> returns selected canonical stop IDs from the latest bus-arrival snapshot. It includes a snapshot version and observation and expiry times for each stop. It also returns `unavailableStopIds`, the requested stops that had no fresh result in the latest cycle (see the snapshot lifecycle below); clients should show these as having no live data, not as having no buses.
 - /api/shuttle-service-windows?routes=<comma-separated route IDs> returns NUS service windows and their observation and expiry times.
 - /api/public-bus-arrivals?stops=<JSON array> accepts mapped canonical stop IDs and returns LTA arrivals with per-service live, no-estimate, not-in-operation, or provider-error status.
 
@@ -23,6 +23,8 @@ One Express process owns the in-memory bus-arrival snapshot. Run one backend ins
 The process starts its first refresh immediately, then targets a 30-second start-to-start interval by default. It keeps one cycle in flight; if a cycle runs past the next interval, the following cycle starts as soon as the current one finishes. Bus-stop requests are limited to six concurrent requests. Each upstream request has a five-second timeout and one retry by default, with a 200 ms exponential backoff.
 
 Express publishes a generation only after the cycle settles. Successful stops replace their own value and observation time. Before the first complete generation, any partial cycle is discarded and readiness remains false. After a complete generation exists, a failed stop keeps its last good value and original observation time. If all stops fail, the previous generation stays in place.
+
+A stop that did not succeed in the latest cycle is listed in the snapshot's `unavailableStopIds`, whether it has no earlier data or only carried-over data. Carried-over routes and observation times stay in the snapshot, but the stop is reported as unavailable so that nothing presents stale arrivals as live. A stop leaves the list as soon as a later cycle succeeds for it. Journey planning treats a listed boarding stop as having no live wait and uses the timetable. The field is optional in the response, and `/api/shuttle-arrivals` returns only the listed IDs that were requested.
 
 NUS service-window results are cached for ten minutes. LTA stop results use their own short cache and distinguish an upstream failure from a valid response with no estimate.
 

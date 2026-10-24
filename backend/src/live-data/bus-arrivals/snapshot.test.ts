@@ -108,6 +108,63 @@ describe('refreshBusArrivalSnapshot', () => {
     assert.equal(result.snapshot, previousSnapshot)
     assert.equal(result.failures.length, stops.length)
   })
+
+  it('lists a failed stop with no previous data as unavailable', async () => {
+    const keptStops = stops.filter((stop) => stop.stopId !== 'STOP-C')
+    const previousWithoutStopC = {
+      ...previousSnapshot,
+      stops: Object.fromEntries(keptStops.map((stop) => [stop.stopId, previousSnapshot.stops[stop.stopId]])),
+      stopObservations: Object.fromEntries(keptStops.map((stop) => [stop.stopId, previousSnapshot.stopObservations[stop.stopId]])),
+    }
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
+      if (stop.stopId === 'STOP-C') throw new Error('NUS unavailable')
+      return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
+    }, {
+      previousSnapshot: previousWithoutStopC,
+      snapshotVersion: 'next',
+      refreshIntervalMs: 30_000,
+      maxConcurrency: 2,
+    })
+
+    assert.equal(result.published, true)
+    assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-C'])
+    assert.deepEqual(result.snapshot?.stops['STOP-C'], {})
+    assert.equal(result.snapshot?.stopObservations?.['STOP-C'], undefined)
+  })
+
+  it('lists a failed stop that keeps previous data as unavailable', async () => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
+      if (stop.stopId === 'STOP-B') throw new Error('NUS unavailable')
+      return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
+    }, {
+      previousSnapshot,
+      snapshotVersion: 'next',
+      refreshIntervalMs: 30_000,
+      maxConcurrency: 2,
+    })
+
+    assert.equal(result.published, true)
+    assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-B'])
+    assert.equal(result.snapshot?.stops['STOP-B'], previousSnapshot.stops['STOP-B'])
+  })
+
+  it('keeps listing a stop that stays unavailable across passes', async () => {
+    const result = await refreshBusArrivalSnapshot(stops, async (stop) => {
+      if (stop.stopId === 'STOP-C') throw new Error('NUS unavailable')
+      return resultFor(stop.stopId, '2026-10-10T10:00:01.000Z')
+    }, {
+      previousSnapshot: {
+        ...previousSnapshot,
+        stops: { ...previousSnapshot.stops, 'STOP-C': {} },
+        unavailableStopIds: ['STOP-C'],
+      },
+      snapshotVersion: 'next',
+      refreshIntervalMs: 30_000,
+      maxConcurrency: 2,
+    })
+
+    assert.deepEqual(result.snapshot?.unavailableStopIds, ['STOP-C'])
+  })
 })
 
 describe('createBusArrivalSnapshotStore', () => {

@@ -152,6 +152,7 @@ export async function refreshBusArrivalSnapshot(
   const previous = options.previousSnapshot
   const stopsSnapshot: Record<string, Readonly<Record<string, ShuttleRouteArrivalData>>> = {}
   const stopObservations: Record<string, DataFreshness> = {}
+  const unavailableStopIds: string[] = []
 
   for (const stop of stops) {
     const result = loaded.get(stop.stopId)
@@ -164,7 +165,10 @@ export async function refreshBusArrivalSnapshot(
       continue
     }
 
+    // A stop without a fresh result is unavailable, even if we carry its previous routes over,
+    // so clients and routing never present stale arrivals as live.
     stopsSnapshot[stop.stopId] = previous?.stops[stop.stopId] ?? {}
+    unavailableStopIds.push(stop.stopId)
     const previousObservation = previous?.stopObservations?.[stop.stopId]
     if (previousObservation) stopObservations[stop.stopId] = previousObservation
   }
@@ -182,6 +186,7 @@ export async function refreshBusArrivalSnapshot(
     nextRefreshAt,
     stops: stopsSnapshot,
     stopObservations,
+    unavailableStopIds,
   }
 
   return {

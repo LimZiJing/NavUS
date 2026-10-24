@@ -23,6 +23,7 @@ export interface ShuttleArrivalSnapshot extends DataFreshness {
   readonly nextRefreshAt?: string
   readonly stops: Readonly<Record<string, Readonly<Record<string, ShuttleRouteArrivalData>>>>
   readonly stopObservations?: Readonly<Record<string, ShuttleArrivalObservation>>
+  readonly unavailableStopIds?: readonly string[]
 }
 
 export const SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS = 30_000

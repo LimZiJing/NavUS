@@ -117,6 +117,30 @@ describe('createLiveShuttleWaitingTimeProvider', () => {
     })).toBe(60)
   })
 
+  it('returns no live wait for a stop reported unavailable, even with a route and snapshot time', () => {
+    const krMrtRoute = {
+      D2: {
+        nextArrivalSeconds: 60,
+        upcomingArrivalSeconds: [60],
+        headwaySeconds: null,
+      },
+    }
+    const liveSnapshot = { ...snapshot, stops: { ...snapshot.stops, 'KR-MRT': krMrtRoute } }
+    const unavailableSnapshot = { ...liveSnapshot, unavailableStopIds: ['KR-MRT'] } as const
+    const nowMs = Date.parse(snapshot.observedAt)
+
+    expect(createLiveBusWaitingTimeProvider(liveSnapshot, nowMs)(record, {
+      routeId: 'D2',
+      boardingStopId: 'KR-MRT',
+      elapsedSeconds: 0,
+    })).toBe(60)
+    expect(createLiveBusWaitingTimeProvider(unavailableSnapshot, nowMs)(record, {
+      routeId: 'D2',
+      boardingStopId: 'KR-MRT',
+      elapsedSeconds: 0,
+    })).toBeNull()
+  })
+
   it('waits five minutes at each test boarding and checks service at that boarding instant', () => {
     const wait = createTestBusWaitingTimeProvider(Date.parse('2026-09-23T14:50:00Z'), {
       A1: [{ routeId: 'A1', firstTime: '07:15', lastTime: '23:00', dayType: 'Mon-Fri', dates: [] }],

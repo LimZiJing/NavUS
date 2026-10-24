@@ -112,6 +112,14 @@ function parseStopObservations(value: unknown): Readonly<Record<string, ShuttleA
   return observations
 }
 
+function parseUnavailableStopIds(value: unknown): readonly string[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value) || value.some((stopId) => typeof stopId !== 'string')) {
+    throw new Error('bus arrival response has invalid unavailableStopIds')
+  }
+  return value as string[]
+}
+
 function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
   if (!isRecord(input) || !isRecord(input.stops)) {
     throw new Error('bus arrival response was invalid')
@@ -141,6 +149,7 @@ function parseSnapshot(input: unknown): ShuttleArrivalSnapshot {
     nextRefreshAt: parseOptionalTimestamp(input.nextRefreshAt, 'nextRefreshAt'),
     stops,
     stopObservations: parseStopObservations(input.stopObservations),
+    unavailableStopIds: parseUnavailableStopIds(input.unavailableStopIds),
   }
 }
 
@@ -172,6 +181,9 @@ function selectStops(
     ...snapshot,
     stops: selectedStops,
     ...(snapshot.stopObservations ? { stopObservations: selectedObservations } : {}),
+    ...(snapshot.unavailableStopIds
+      ? { unavailableStopIds: snapshot.unavailableStopIds.filter((stopId) => stopId in selectedStops) }
+      : {}),
   }
 }
 
@@ -194,6 +206,12 @@ function mergeSnapshot(
     stops: { ...current.stops, ...incoming.stops },
     stopObservations: current.stopObservations || incoming.stopObservations
       ? { ...current.stopObservations, ...incoming.stopObservations }
+      : undefined,
+    unavailableStopIds: current.unavailableStopIds || incoming.unavailableStopIds
+      ? [
+        ...(current.unavailableStopIds ?? []).filter((stopId) => !(stopId in incoming.stops)),
+        ...(incoming.unavailableStopIds ?? []),
+      ]
       : undefined,
   }
 }
